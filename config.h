@@ -111,7 +111,7 @@ public:
     int alpha_numerator = 1;
     int alpha_denominator = 5;
 
-    string exact_pprs_folder;
+    string exact_pprs_folder = "./exact/";
 
 
     ptree get_data() {
