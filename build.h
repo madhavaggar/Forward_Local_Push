@@ -1,4 +1,3 @@
-//Contributors: Sibo Wang, Renchi Yang
 #ifndef BUILD_H
 #define BUILD_H
 

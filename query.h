@@ -1,4 +1,3 @@
-//Contributors: Sibo Wang, Renchi Yang
 #ifndef FORA_QUERY_H
 #define FORA_QUERY_H
 

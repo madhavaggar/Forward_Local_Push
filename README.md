@@ -31,7 +31,6 @@ $ make
     - --dataset \<dataset\>
     - --query_size \<queries count\>
     - --k \<top k\>
-    - --hub_space \<hubppr oracle space-consumption\>
     - --exact_ppr_path \<directory to place generated ground truth\>
     - --result_dir \<directory to place results\>
     - --opt:  optimization techniques for whole-graph SSPPR and top-k queries are applied.

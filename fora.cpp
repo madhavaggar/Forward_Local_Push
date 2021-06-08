@@ -1,4 +1,3 @@
-//Contributors: Sibo Wang, Renchi Yang
 #define _CRT_SECURE_NO_DEPRECATE
 #define HEAD_INFO
 

@@ -1,4 +1,3 @@
-//Contributors: Sibo Wang, Renchi Yang
 #ifndef __ALGO_H__
 #define __ALGO_H__
 
