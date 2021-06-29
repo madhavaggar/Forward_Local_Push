@@ -1,3 +1,4 @@
+//Contributors: Sibo Wang, Renchi Yang
 #ifndef FORA_QUERY_H
 #define FORA_QUERY_H
 
@@ -24,7 +25,19 @@ void compute_ppr_with_reserve(){
     }
 }
 
-void get_topk(int v, Graph &graph){
+void compute_ppr_with_reserve_reverse(){
+    ppr.clean();
+    int node_id;
+    double reserve;
+    for(long i=0; i< bwd_idx.first.occur.m_num; i++){
+        node_id = bwd_idx.first.occur[i];
+        reserve = bwd_idx.first[ node_id ];
+        if(reserve)
+            ppr.insert(node_id, reserve);
+    }
+}
+
+void get_topk(int v, Graph &graph){ // 1 thread 1 query
     display_setting();
     if(config.algo == FWDPUSH){
         Timer timer(0);
@@ -37,8 +50,19 @@ void get_topk(int v, Graph &graph){
         compute_ppr_with_reserve();
         topk_ppr();
     }
+    else if(config.algo == REVPUSH){
+        Timer timer(0);
+        double rsum = 1;
+        
+        {
+            Timer timer(FWD_LU);
+            reverse_local_update_linear(v, graph);
+        }
+        compute_ppr_with_reserve_reverse();
+        topk_ppr();
+    }
      // not FORA, so it's single source
-     // no need to change k to run again
+     // no need to change k to un again
      // check top-k results for different k
     compute_precision_for_dif_k(v);
 
@@ -210,8 +234,14 @@ void topk(Graph& graph){
         fwd_idx.second.initialize(graph.n);
         ppr.initialize(graph.n);
     }
+    else if(config.algo == REVPUSH){
+        fwdpush_setting(graph.n, graph.m);
+        bwd_idx.first.initialize(graph.n);
+        bwd_idx.second.initialize(graph.n);
+        ppr.initialize(graph.n);
+    }
 
-    for(int i=0; i<query_size; i++){
+    for(int i=0; i<query_size; i++){ //1000 source nodes
         cout << i+1 <<". source node:" << queries[i] << endl;
         get_topk(queries[i], graph);
         split_line();
@@ -251,7 +281,7 @@ void query(Graph& graph){
         fwd_idx.first.initialize(graph.n);
         fwd_idx.second.initialize(graph.n);
 
-        for(int i=0; i<query_size; i++){
+        for(int i=0; i<query_size; i++){ //parallelize pardo using multiple threads: multiple sources at once
             cout << i+1 <<". source node:" << queries[i] << endl;
             Timer timer(used_counter);
             double rsum = 1;
@@ -259,6 +289,23 @@ void query(Graph& graph){
             compute_ppr_with_reserve();
             split_line();
         }
+    }
+    else if(config.algo == REVPUSH){
+        fwdpush_setting(graph.n,graph.m);
+        display_setting();
+        used_counter = FWD_LU;
+        bwd_idx.first.initialize(graph.n);
+        bwd_idx.second.initialize(graph.n);
+
+        for(int i=0; i<query_size; i++){ //parallelize pardo using multiple threads: multiple sources at once
+            cout << i+1 <<". source node:" << queries[i] << endl;
+            Timer timer(used_counter);
+            double rsum = 1;
+            reverse_local_update_linear(queries[i], graph);
+            compute_ppr_with_reserve_reverse();
+            split_line();
+        }
+
     }
 
     display_time_usage(used_counter, query_size);
@@ -286,6 +333,12 @@ void batch_topk(Graph& graph){
         fwd_idx.first.initialize(graph.n);
         fwd_idx.second.initialize(graph.n);
         ppr.initialize(graph.n);
+    }
+    else if(config.algo == REVPUSH){
+        fwdpush_setting(graph.n, graph.m);
+        bwd_idx.first.initialize(graph.n);
+        bwd_idx.second.initialize(graph.n);
+        ppr.initialize(graph.n);   
     }
     unsigned int step = config.k/5;
     if(step > 0){

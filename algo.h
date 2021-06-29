@@ -1,3 +1,4 @@
+//Contributors: Sibo Wang, Renchi Yang
 #ifndef __ALGO_H__
 #define __ALGO_H__
 
@@ -27,6 +28,7 @@ struct PredResult{
 unordered_map<int, PredResult> pred_results;
 
 Fwdidx fwd_idx;
+Bwdidx bwd_idx;
 iMap<double> ppr;
 
 // RwIdx rw_idx;
@@ -172,6 +174,19 @@ inline void fwdpush_setting(int n, long long m){
     config.rmax = config.rmax_scale*config.delta*config.epsilon*n/m;
 }
 
+inline void revpush_setting(int n, long long m){
+    // below is just a estimate value, has no accuracy guarantee
+    // since for undirected graph, error |ppr(s, t)-approx_ppr(s, t)| = sum( r(s, v)*ppr(v, t)) <= d(t)*rmax
+    // |ppr(s, t)-approx_ppr(s, t)| <= epsilon*ppr(s, t)
+    // d(t)*rmax <= epsilon*ppr(s, t)
+    // rmax <= epsilon*ppr(s, t)/d(t)
+    // d(t): use average degree d=m/n
+    // ppr(s, t): use minimum ppr value, delta, i.e., 1/n
+    // thus, rmax <= epsilon*delta*n/m = epsilon/m
+    // use config.rmax_scale to tune rmax manually
+    config.rmax = config.rmax_scale*config.delta*config.epsilon*n/m;
+}
+
 inline void generate_ss_query(int n){
     string filename = config.graph_location + "ssquery.txt";
     if(exists_test(filename)){
@@ -260,7 +275,7 @@ double topk_ppr(){
         // INFO(nodeid);
         temp_ppr[nodeid] = ppr[ nodeid ];
     }
-
+  
     partial_sort_copy(temp_ppr.begin(), temp_ppr.end(), topk_pprs.begin(), topk_pprs.end(), 
             [](pair<int, double> const& l, pair<int, double> const& r){return l.second > r.second;});
     
@@ -333,6 +348,58 @@ inline void display_precision_for_dif_k(){
     cout << endl;
 }
 
+static void reverse_local_update_linear(int t, const Graph &graph, double init_residual = 1) {
+    bwd_idx.first.clean();
+    bwd_idx.second.clean();
+
+    static unordered_map<int, bool> idx;
+    idx.clear();
+
+    vector<int> q;
+    q.reserve(graph.n);
+    q.push_back(-1);
+    unsigned long left = 1;
+
+    double myeps = config.rmax;
+
+    q.push_back(t);
+    bwd_idx.second.insert(t, init_residual);
+
+    idx[t] = true;
+    while (left < q.size()) {
+        int v = q[left];
+        idx[v] = false;
+        left++;
+        if (bwd_idx.second[v] < myeps)
+            break;
+
+        if(bwd_idx.first.notexist(v))
+            bwd_idx.first.insert(v, bwd_idx.second[v]*config.alpha);
+        else
+            bwd_idx.first[v] += bwd_idx.second[v]*config.alpha;
+
+        double residual = (1 - config.alpha) * bwd_idx.second[v];
+        bwd_idx.second[v] = 0;
+        if(graph.gr[v].size()>0){
+            for (int next : graph.gr[v]) {
+
+                int cnt = graph.g[next].size();
+                if(bwd_idx.second.notexist(next))
+                    bwd_idx.second.insert(next, residual/cnt);
+                else
+                    bwd_idx.second[next] += residual/cnt;
+
+                if (bwd_idx.second[next] > myeps && idx[next] != true) {
+                    // put next into q if next is not in q
+                    idx[next] = true;//(int) q.size();
+                    q.push_back(next);
+                }
+            }
+        }
+    }
+}
+
+
 void forward_local_update_linear(int s, const Graph &graph, double& rsum, double rmax, double init_residual = 1.0){
     fwd_idx.first.clean();
     fwd_idx.second.clean();
@@ -372,6 +439,7 @@ void forward_local_update_linear(int s, const Graph &graph, double& rsum, double
 
         int out_neighbor = graph.g[v].size();
         rsum -=v_residue*config.alpha;
+
         if(out_neighbor == 0){
             fwd_idx.second[s] += v_residue * (1-config.alpha);
             if(graph.g[s].size()>0 && fwd_idx.second[s]/graph.g[s].size() >= myeps && idx[s] != true){

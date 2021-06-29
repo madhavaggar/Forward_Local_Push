@@ -1,3 +1,4 @@
+//Contributors: Sibo Wang, Renchi Yang
 #define _CRT_SECURE_NO_DEPRECATE
 #define HEAD_INFO
 
@@ -146,7 +147,7 @@ int main(int argc, char *argv[]) {
     }
 
     INFO(config.version);
-    vector<string> possibleAlgo = {FWDPUSH};
+    vector<string> possibleAlgo = {FWDPUSH, REVPUSH};
     
     INFO(config.action);
 

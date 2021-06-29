@@ -4,7 +4,10 @@ cmake_minimum_required(VERSION 2.8)
 
 #SET(CMAKE_CXX_FLAGS "-std=c++11 -O3 -Wall")
 #SET(CMAKE_CXX_FLAGS "-std=c++11 -O3 -DNDEBUG -w -pthread -lboost_serialization -lboost_filesystem -lboost_system")
-SET(CMAKE_CXX_FLAGS "-std=c++11 -O3 -w  -pthread -lboost_serialization -lboost_filesystem -lboost_system -lboost_date_time")
+#SET(CMAKE_CXX_FLAGS "-std=c++11 -O3 -w -pthread -lboost_serialization -lboost_filesystem -lboost_system -lboost_date_time")
+SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+SET(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym") 
+SET(CMAKE_BUILD_TYPE DEBUG)
 #SET(CMAKE_CXX_FLAGS "-std=c++11 -O3 -w -pthread")
 
 

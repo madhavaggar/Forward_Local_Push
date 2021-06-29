@@ -1,0 +1,40 @@
+INIT GRAPH():
+    //low space mapping of Graph Coordinates
+    INPUT: x Graph Edges A -> B : GTXT
+    Vector<T> G
+    INT* IDMAP,DEGREE
+    FOR EACH t1,t2 in GTXT:
+        IF IDMAP[t1] DOES NOT EXIST:
+            IDMAP[t1] = new_index
+            DEGREE[new_index] += 1
+            new_index++
+        IF IDMAP[t2] DOES NOT EXIST:
+            IDMAP[t2] = new_index
+            new_index++
+        
+        ASSIGN G[n] memory DEGREE[n]
+    FOR EACH t1,t2 in GTXT:
+        G[IDMAP[t1]].push_back(IDMAP[t2])
+
+
+
+FWDPUSH():
+    INPUT: source, graph, residual_sum, max_residual, initial_residual
+    Vector<unordered_map,unordered_map> fwd_idx //First Map: Estimates, Second Map: Residuals
+    Vector<int> q //Nodes that can propagate
+    INITIALIZE fwd_idx.RESIDUALS(source,initial_residual)
+    WHILE NOT END(q):
+        v = q[current_index]
+        Residue = fwd_idx.RESIDUALS[v]
+        fwd_idx.ESTIMATES += Residue*ALPHA
+        FOR x in NEIGHBOURS_OF_V:
+        fwd_idx.RESIDUALS[x] = ((1-ALPHA)*Residue)/SIZE(NEIGHBOURS_OF_V)
+        IF fwd_idx.RESIDUALS[x]/SIZE(NEIGHBOURS_OF_X)>= ERROR
+            q.ADD(neighbours of v)
+    
+
+
+
+
+
+

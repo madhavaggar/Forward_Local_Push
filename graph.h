@@ -152,14 +152,13 @@ public:
             FILE *fin = fopen(graph_file.c_str(), "r");
             int t1, t2;
             while (fscanf(fin, "%d%d", &t1, &t2) != EOF) {
-                assert(t1 < n);
-                assert(t2 < n);
+                assert(t1 < n+1);
+                assert(t2 < n+1);
                 if(t1 == t2) continue;
                 g[t1].push_back(t2);
                 gr[t2].push_back(t1);
             }
         }
-
     }
 
     double get_avg_degree() const {

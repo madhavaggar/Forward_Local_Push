@@ -38,6 +38,8 @@ const string GEN_EXACT_TOPK = "gen-exact-topk";
 const string BATCH_TOPK = "batch-topk";
 
 const string FWDPUSH = "fwdpush";
+const string REVPUSH = "revpush";
+
 
 const int FWD_LU = 5;
 const int RONDOM_WALK = 6;
@@ -59,6 +61,7 @@ const string parent_folder = string("./") + FILESEP;
 
 
 // typedef pair<unordered_map<int, double>, unordered_map<int, double>> Fwdidx;
+typedef pair<iMap<double>, iMap<double>> Bwdidx;
 typedef pair<iMap<double>, iMap<double>> Fwdidx;
 
 
