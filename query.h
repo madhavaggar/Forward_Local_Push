@@ -7,10 +7,12 @@
 #include "heap.h"
 #include "config.h"
 #include "build.h"
+#include <omp.h>
 
 //#define CHECK_PPR_VALUES 1
 // #define CHECK_TOP_K_PPR 1
 #define PRINT_PRECISION_FOR_DIF_K 1
+#define NUM_THREADS 2
 // std::mutex mtx;
 
 void compute_ppr_with_reserve(){
@@ -241,6 +243,8 @@ void topk(Graph& graph){
         ppr.initialize(graph.n);
     }
 
+    omp_set_num_threads(NUM_THREADS);
+    #pragma omp parallel for    
     for(int i=0; i<query_size; i++){ //1000 source nodes
         cout << i+1 <<". source node:" << queries[i] << endl;
         get_topk(queries[i], graph);
@@ -272,15 +276,17 @@ void query(Graph& graph){
     INFO(config.rmax_scale);
 
     ppr.init_keys(graph.n);
-    
+    omp_set_num_threads(NUM_THREADS);
+       
     if(config.algo == FWDPUSH){
         fwdpush_setting(graph.n, graph.m);
         display_setting();
         used_counter = FWD_LU;
 
         fwd_idx.first.initialize(graph.n);
-        fwd_idx.second.initialize(graph.n);
-
+        fwd_idx.second.initialize(graph.n);  
+        
+        #pragma omp parallel for    
         for(int i=0; i<query_size; i++){ //parallelize pardo using multiple threads: multiple sources at once
             cout << i+1 <<". source node:" << queries[i] << endl;
             Timer timer(used_counter);
@@ -297,6 +303,7 @@ void query(Graph& graph){
         bwd_idx.first.initialize(graph.n);
         bwd_idx.second.initialize(graph.n);
 
+        #pragma omp parallel for  
         for(int i=0; i<query_size; i++){ //parallelize pardo using multiple threads: multiple sources at once
             cout << i+1 <<". source node:" << queries[i] << endl;
             Timer timer(used_counter);
@@ -355,6 +362,8 @@ void batch_topk(Graph& graph){
     // not FORA, so it's of single source
     // no need to change k to run again
     // check top-k results for different k
+    omp_set_num_threads(NUM_THREADS);
+    #pragma omp parallel for    
 
     for (int i = 0; i < query_size; i++)
     {
