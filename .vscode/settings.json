@@ -2,7 +2,8 @@
     "files.associations": {
         "atomic": "cpp",
         "*.tcc": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "unordered_map": "cpp"
     },
     "intelOneAPI.analysis.binary-path": "/home/madhav/fora/fora",
     "intelOneAPI.analysis.vtune.install-root": "/opt/intel/oneapi/vtune/latest",

@@ -1,6 +1,7 @@
 //Contributors: Sibo Wang, Renchi Yang
 #ifndef FORA_QUERY_H
 #define FORA_QUERY_H
+//#define unordered_map ska::unordered_map
 
 #include "algo.h"
 #include "graph.h"
@@ -12,7 +13,7 @@
 //#define CHECK_PPR_VALUES 1
 // #define CHECK_TOP_K_PPR 1
 #define PRINT_PRECISION_FOR_DIF_K 1
-#define NUM_THREADS 2
+#define NUM_THREADS 1
 // std::mutex mtx;
 
 void compute_ppr_with_reserve(){
@@ -80,8 +81,8 @@ void get_topk(int v, Graph &graph){ // 1 thread 1 query
 #endif
 }
 
-void fwd_power_iteration(const Graph& graph, int start, unordered_map<int, double>& map_ppr){
-    static thread_local unordered_map<int, double> map_residual;
+void fwd_power_iteration(const Graph& graph, int start, ska::unordered_map<int, double>& map_ppr){
+    static thread_local ska::unordered_map<int, double> map_residual;
     map_residual[start] = 1.0;
 
     int num_iter=0;
@@ -114,8 +115,8 @@ void fwd_power_iteration(const Graph& graph, int start, unordered_map<int, doubl
     map_residual.clear();
 }
 
-void multi_power_iter(const Graph& graph, const vector<int>& source, unordered_map<int, vector<pair<int ,double>>>& map_topk_ppr ){
-    static thread_local unordered_map<int, double> map_ppr;
+void multi_power_iter(const Graph& graph, const vector<int>& source, ska::unordered_map<int, vector<pair<int ,double>>>& map_topk_ppr ){
+    static thread_local ska::unordered_map<int, double> map_ppr;
     for(int start: source){
         fwd_power_iteration(graph, start, map_ppr);
 
@@ -154,7 +155,7 @@ void gen_exact_topk(const Graph& graph){
     int avg_queries_per_thread = query_size/num_thread;
 
     vector<vector<int>> source_for_all_core(num_thread);
-    vector<unordered_map<int, vector<pair<int ,double>>>> ppv_for_all_core(num_thread);
+    vector<ska::unordered_map<int, vector<pair<int ,double>>>> ppv_for_all_core(num_thread);
 
     for(int tid=0; tid<num_thread; tid++){
         int s = tid*avg_queries_per_thread;
