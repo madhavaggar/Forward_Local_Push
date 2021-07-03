@@ -19,10 +19,14 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem.hpp>
 #include "unordered_map.hpp"
-//#include <unordered_map>
+#include <sparsehash/sparse_hash_map>
+#include <sparsehash/dense_hash_map>
+#include <unordered_map>
 #include <list>
 using namespace boost;
 using namespace boost::property_tree;
+using google::dense_hash_map;
+using google::sparse_hash_map;
 
 
 const double ALPHA_DEFAULT = 0.2;

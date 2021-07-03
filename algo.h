@@ -26,7 +26,7 @@ struct PredResult{
         real_topk_source_count(count){}
 };
 
-ska::unordered_map<int, PredResult> pred_results;
+unordered_map<int, PredResult> pred_results;
 
 Fwdidx fwd_idx;
 Bwdidx bwd_idx;
@@ -220,14 +220,14 @@ void compute_precision(int v){
     //INFO(topk_pprs.size());
     if( exact_topk_pprs.size()>=1 && exact_topk_pprs.find(v)!=exact_topk_pprs.end() ){
 
-        ska::unordered_map<int, double> topk_map;
+        unordered_map<int, double> topk_map;
         for(auto &p: topk_pprs){
             if(p.second>0){
                 topk_map.insert(p);
             }
         }
 
-        ska::unordered_map<int, double> exact_map;
+        unordered_map<int, double> exact_map;
         int size_e = min( config.k, (unsigned int)exact_topk_pprs[v].size() );
 
         for(int i=0; i<size_e; i++){
@@ -267,7 +267,7 @@ double topk_ppr(){
     topk_pprs.clear();
     topk_pprs.resize(config.k);
 
-    static ska::unordered_map< int, double > temp_ppr;
+    static unordered_map< int, double > temp_ppr;
     temp_ppr.clear();
     // temp_ppr.resize(ppr.occur.m_num);
     int nodeid;
@@ -288,7 +288,7 @@ void compute_precision_for_dif_k(int v){
         for(auto k: ks){
 
             int j=0;
-            ska::unordered_map<int, double> topk_map;
+            unordered_map<int, double> topk_map;
             for(auto &p: topk_pprs){
                 if(p.second>0){
                     topk_map.insert(p);
@@ -300,7 +300,7 @@ void compute_precision_for_dif_k(int v){
             }
 
             double recall=0.0;
-            ska::unordered_map<int, double> exact_map;
+            unordered_map<int, double> exact_map;
             int size_e = min( k, (int)exact_topk_pprs[v].size() );
             for(int i=0; i<size_e; i++){
                 pair<int ,double>& p = exact_topk_pprs[v][i];
@@ -353,7 +353,7 @@ static void reverse_local_update_linear(int t, const Graph &graph, double init_r
     bwd_idx.first.clean();
     bwd_idx.second.clean();
 
-    static ska::unordered_map<int, bool> idx;
+    static unordered_map<int, bool> idx;
     idx.clear();
 
     vector<int> q;
