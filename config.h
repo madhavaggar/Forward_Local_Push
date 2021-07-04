@@ -2,6 +2,7 @@
 #define __CONFIG_H__
 
 
+
 #ifdef WIN32
 #define FILESEP "\\"
 #else
@@ -96,7 +97,7 @@ public:
     double omega; // 1/omega  omega = # of random walk
     double rmax; // identical to r_max
 
-    unsigned int query_size = 1000;
+    unsigned long long query_size;
 
     unsigned int max_iter_num = 100;
 

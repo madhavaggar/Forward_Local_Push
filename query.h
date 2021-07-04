@@ -131,10 +131,10 @@ void multi_power_iter(const Graph& graph, const vector<int>& source, unordered_m
 
 void gen_exact_topk(const Graph& graph){
 
-    vector<int> queries;
+    vector<long long> queries;
     load_ss_query(queries);
     INFO(queries.size());
-    unsigned int query_size = queries.size();
+    unsigned long long query_size = queries.size();
     query_size = min( query_size, config.query_size );
     INFO(query_size);
     string exact_top_file_str = get_exact_topk_ppr_file();
@@ -148,7 +148,7 @@ void gen_exact_topk(const Graph& graph){
 
     split_line();
 
-    unsigned NUM_CORES = std::thread::hardware_concurrency()-1;
+    unsigned long long NUM_CORES = std::thread::hardware_concurrency()-1;
     assert(NUM_CORES >= 2);
 
     int num_thread = min(query_size, NUM_CORES);
@@ -196,10 +196,10 @@ void gen_exact_topk(const Graph& graph){
 }
 
 void topk(Graph& graph){
-    vector<int> queries;
+    vector<long long> queries;
     load_ss_query(queries);
     INFO(queries.size());
-    unsigned int query_size = queries.size();
+    unsigned long long query_size = queries.size();
     query_size = min( query_size, config.query_size );
     int used_counter=0;
 
@@ -266,9 +266,9 @@ void topk(Graph& graph){
 
 void query(Graph& graph){
     INFO(config.algo);
-    vector<int> queries;
+    vector<long long> queries;
     load_ss_query(queries);
-    unsigned int query_size = queries.size();
+    unsigned long long query_size = queries.size();
     query_size = min( query_size, config.query_size );
     INFO(query_size);
     int used_counter=0;
@@ -288,12 +288,15 @@ void query(Graph& graph){
         fwd_idx.second.initialize(graph.n);  
         
         #pragma omp parallel for    
-        for(int i=0; i<query_size; i++){ //parallelize pardo using multiple threads: multiple sources at once
+        for(long long i=0; i<query_size; i++){ //parallelize pardo using multiple threads: multiple sources at once
             cout << i+1 <<". source node:" << queries[i] << endl;
             Timer timer(used_counter);
             double rsum = 1;
+            cout<<"Before forward_local_update"<<endl;
             forward_local_update_linear(queries[i], graph, rsum, config.rmax);
+            cout<<"After forward_local_update"<<endl;
             compute_ppr_with_reserve();
+            cout<<"Afterreserve computation"<<endl;
             split_line();
         }
     }
@@ -321,10 +324,10 @@ void query(Graph& graph){
 }
 
 void batch_topk(Graph& graph){
-    vector<int> queries;
+    vector<long long> queries;
     load_ss_query(queries);
     INFO(queries.size());
-    unsigned int query_size = queries.size();
+    unsigned long long query_size = queries.size();
     query_size = min( query_size, config.query_size );
     int used_counter=0;
     assert(config.k < graph.n-1);

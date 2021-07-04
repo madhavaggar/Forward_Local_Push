@@ -201,14 +201,14 @@ inline void generate_ss_query(int n){
     }
 }
 
-void load_ss_query(vector<int>& queries){
+void load_ss_query(vector<long long>& queries){
     string filename = config.graph_location+"ssquery.txt";
      if(!file_exists_test(filename)){
         cerr<<"query file does not exist, please generate ss query files first"<<endl;
         exit(0);
     }
     ifstream queryfile(filename);
-    int v;
+    long long v;
     while(queryfile>>v){
         queries.push_back(v);
     }
@@ -401,7 +401,7 @@ static void reverse_local_update_linear(int t, const Graph &graph, double init_r
 }
 
 
-void forward_local_update_linear(int s, const Graph &graph, double& rsum, double rmax, double init_residual = 1.0){
+void forward_local_update_linear(long long s, const Graph &graph, double& rsum, double rmax, double init_residual = 1.0){
     fwd_idx.first.clean();
     fwd_idx.second.clean();
 
@@ -416,10 +416,10 @@ void forward_local_update_linear(int s, const Graph &graph, double& rsum, double
 
     double myeps = rmax;//config.rmax;
 
-    vector<int> q;  //nodes that can still propagate forward
+    vector<long long> q;  //nodes that can still propagate forward
     q.reserve(graph.n);
     q.push_back(-1);
-    unsigned long left = 1;
+    unsigned long long left = 1;
     q.push_back(s);
 
     // residual[s] = init_residual;
@@ -427,8 +427,8 @@ void forward_local_update_linear(int s, const Graph &graph, double& rsum, double
     
     idx[s] = true;
     
-    while (left < (int) q.size()) {
-        int v = q[left];
+    while (left < (long long) q.size()) {
+        long long v = q[left];
         idx[v] = false;
         left++;
         double v_residue = fwd_idx.second[v];
@@ -438,7 +438,7 @@ void forward_local_update_linear(int s, const Graph &graph, double& rsum, double
         else
             fwd_idx.first[v] += v_residue * config.alpha;
 
-        int out_neighbor = graph.g[v].size();
+        long long out_neighbor = graph.g[v].size();
         rsum -=v_residue*config.alpha;
 
         if(out_neighbor == 0){
@@ -451,7 +451,7 @@ void forward_local_update_linear(int s, const Graph &graph, double& rsum, double
         }
 
         double avg_push_residual = ((1.0 - config.alpha) * v_residue) / out_neighbor;
-        for (int next : graph.g[v]) {
+        for (long long next : graph.g[v]) {
             // total_push++;
             if( !fwd_idx.second.exist(next) )
                 fwd_idx.second.insert( next,  avg_push_residual);
