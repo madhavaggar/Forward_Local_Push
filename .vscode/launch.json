@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${command:cmake.launchTargetPath}",
-            "args": ["topk", "--algo", "fwdpush", "--prefix", "./data/", "--dataset", "webstanford", "--epsilon", "0.5", "--query_size", "50" ,"--k", "500"],
+            "args": ["topk", "--algo", "fwdpush", "--prefix", "./data/", "--dataset", "webstanford", "--epsilon", "0.5", "--query_size", "500" ,"--k", "100"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [

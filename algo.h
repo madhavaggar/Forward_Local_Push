@@ -28,10 +28,6 @@ struct PredResult{
 
 unordered_map<int, PredResult> pred_results;
 
-Fwdidx fwd_idx;
-Bwdidx bwd_idx;
-iMap<double> ppr;
-
 // RwIdx rw_idx;
 atomic<unsigned long long> num_total_rw;
 long num_iter_topk;
@@ -123,7 +119,7 @@ inline void display_setting(){
 }
 
 
-static void display_time_usage(int used_counter, int query_size){
+void display_time_usage(int used_counter, int query_size){
    
     if(config.algo == FWDPUSH){
         cout << "Total cost (s): " << Timer::used(used_counter) << endl;
@@ -140,7 +136,7 @@ static void display_time_usage(int used_counter, int query_size){
     cout << "Memory usage (MB):" << get_proc_memory()/1000.0 << endl << endl; 
 }
 
-static void set_result(const Graph& graph, int used_counter, int query_size){
+void set_result(const Graph& graph, int used_counter, int query_size){
     config.query_size = query_size;
 
     result.m = graph.m;
@@ -221,11 +217,13 @@ void compute_precision(int v){
     if( exact_topk_pprs.size()>=1 && exact_topk_pprs.find(v)!=exact_topk_pprs.end() ){
 
         unordered_map<int, double> topk_map;
+
         for(auto &p: topk_pprs){
             if(p.second>0){
                 topk_map.insert(p);
             }
         }
+        
 
         unordered_map<int, double> exact_map;
         int size_e = min( config.k, (unsigned int)exact_topk_pprs[v].size() );
@@ -244,10 +242,8 @@ void compute_precision(int v){
                 precision++;
             }
         }
-
+        cout<<"SIZE: "<<topk_map.size()<<endl;
         assert(exact_map.size() > 0);
-        assert(topk_map.size() > 0);
-
 
         recall = recall*1.0/exact_map.size();
         precision = precision*1.0/exact_map.size();
@@ -263,13 +259,14 @@ inline bool cmp(double x, double y){
     return x>y;
 }
 
-double topk_ppr(){
+double topk_ppr(iMap<double> &ppr){
     topk_pprs.clear();
     topk_pprs.resize(config.k);
 
-    static unordered_map< int, double > temp_ppr;
+    unordered_map< int, double > temp_ppr;
+    
     temp_ppr.clear();
-    // temp_ppr.resize(ppr.occur.m_num);
+    //temp_ppr.resize(ppr.occur.m_num);
     int nodeid;
     for(long i=0; i<ppr.occur.m_num; i++){
         nodeid = ppr.occur[i];
@@ -280,6 +277,7 @@ double topk_ppr(){
     partial_sort_copy(temp_ppr.begin(), temp_ppr.end(), topk_pprs.begin(), topk_pprs.end(), 
             [](pair<int, double> const& l, pair<int, double> const& r){return l.second > r.second;});
     
+
     return topk_pprs[config.k-1].second;
 }
 
@@ -349,11 +347,11 @@ inline void display_precision_for_dif_k(){
     cout << endl;
 }
 
-static void reverse_local_update_linear(int t, const Graph &graph, double init_residual = 1) {
+void reverse_local_update_linear(int t, const Graph &graph, Bwdidx &bwd_idx, double init_residual = 1) {
     bwd_idx.first.clean();
     bwd_idx.second.clean();
 
-    static unordered_map<int, bool> idx;
+    unordered_map<int, bool> idx;
     idx.clear();
 
     vector<int> q;
@@ -401,11 +399,11 @@ static void reverse_local_update_linear(int t, const Graph &graph, double init_r
 }
 
 
-void forward_local_update_linear(long long s, const Graph &graph, double& rsum, double rmax, double init_residual = 1.0){
+void forward_local_update_linear(long long s, const Graph &graph, double& rsum, double rmax, Fwdidx &fwd_idx, double init_residual = 1.0){
     fwd_idx.first.clean();
     fwd_idx.second.clean();
 
-    static vector<bool> idx(graph.n);
+    vector<bool> idx(graph.n);
     std::fill(idx.begin(), idx.end(), false);
 
     if(graph.g[s].size()==0){
