@@ -51,14 +51,15 @@ void get_topk_fwdpush(int v, Graph &graph, Fwdidx &fwd_idx, iMap<double> &ppr){ 
         forward_local_update_linear(v, graph, rsum, config.rmax, fwd_idx);
     }
     compute_ppr_with_reserve(fwd_idx, ppr);
-    topk_ppr(ppr);
+    vector< pair<int ,double> > topk_pprs;
+    topk_ppr(ppr, topk_pprs);
     // not FORA, so it's single source
     // no need to change k to un again
     // check top-k results for different k
     
-    compute_precision_for_dif_k(v);
+    compute_precision_for_dif_k(v,topk_pprs);
 
-    compute_precision(v);
+    compute_precision(v, topk_pprs);
 
 #ifdef CHECK_TOP_K_PPR
     vector<pair<int, double>>& exact_result = exact_topk_pprs[v];
@@ -81,13 +82,14 @@ void get_topk_revpush(int v, Graph &graph, Bwdidx &bwd_idx, iMap<double> &ppr){ 
         reverse_local_update_linear(v, graph, bwd_idx);
     }
     compute_ppr_with_reserve_reverse(bwd_idx, ppr);
-    topk_ppr(ppr);
+    vector< pair<int ,double> > topk_pprs;
+    topk_ppr(ppr, topk_pprs);
     // not FORA, so it's single source
     // no need to change k to un again
     // check top-k results for different k
-    compute_precision_for_dif_k(v);
+    compute_precision_for_dif_k(v,topk_pprs);
 
-    compute_precision(v);
+    compute_precision(v, topk_pprs);
 
 #ifdef CHECK_TOP_K_PPR
     vector<pair<int, double>>& exact_result = exact_topk_pprs[v];

@@ -35,7 +35,6 @@ vector<int> rw_idx;
 vector< pair<unsigned long long, unsigned long> > rw_idx_info;
 
 map< int, vector< pair<int ,double> > > exact_topk_pprs;
-vector< pair<int ,double> > topk_pprs;
 
 
 vector<pair<int, double>> map_lower_bounds;
@@ -210,7 +209,7 @@ void load_ss_query(vector<long long>& queries){
     }
 }
 
-void compute_precision(int v){
+void compute_precision(int v, vector< pair<int ,double> > &topk_pprs){
     double precision=0.0;
     double recall=0.0;
     //INFO(topk_pprs.size());
@@ -259,7 +258,8 @@ inline bool cmp(double x, double y){
     return x>y;
 }
 
-double topk_ppr(iMap<double> &ppr){
+double topk_ppr(iMap<double> &ppr, vector< pair<int ,double> > &topk_pprs){
+    
     topk_pprs.clear();
     topk_pprs.resize(config.k);
 
@@ -281,7 +281,7 @@ double topk_ppr(iMap<double> &ppr){
     return topk_pprs[config.k-1].second;
 }
 
-void compute_precision_for_dif_k(int v){
+void compute_precision_for_dif_k(int v, vector< pair<int ,double> > &topk_pprs){
     if( exact_topk_pprs.size()>=1 && exact_topk_pprs.find(v)!=exact_topk_pprs.end() ){
         for(auto k: ks){
 
