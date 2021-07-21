@@ -21,31 +21,32 @@ $ make
 - action:
     - query
     - topk
-    - build: build index, for FORA only
     - generate-ss-query: generate queries file
     - gen-exact-topk: generate ground truth by power-iterations method
     - batch-topk: for different k=i*config.k/5, i=1,2,3,4,5, compute precision
 - algo: which algorithm you prefer to run
-    - bippr: Bidirectional PPR
-    - fora: FORA
-    - montecarlo: Monte Carlo
     - fwdpush: Forward Push
-    - hubppr: HubPPR
+    - revpush: Reverse Push 
 - options
     - --prefix \<prefix\>
     - --epsilon \<epsilon\>
     - --dataset \<dataset\>
     - --query_size \<queries count\>
     - --k \<top k\>
-    - --with_idx: for FORA or HubPPR
-    - --hub_space \<hubppr oracle space-consumption\>
     - --exact_ppr_path \<directory to place generated ground truth\>
     - --result_dir \<directory to place results\>
     - --balanced: a balance strategy is used to automatically decide R_max for FORA.
     - --opt:  optimization techniques for whole-graph SSPPR and top-k queries are applied.
 
 ## Data
-The example data format is in `./data/webstanford/` folder. The data for DBLP, Pokec, Livejournal, Twitter are not included here for size limitation reason. You can find them online.
+The example data format is in `./data/webstanford/` folder. The data for DBLP, Pokec, Livejournal, Twitter are not included here for size limitation reason. You can find them online. For datasets with node numbers greater than the node count kindly reassign `remap` variable in config.h to True.
+
+config.remap = True;
+
+```sh
+make
+
+```
 
 ## Generate queries
 Generate query files for the graph data. Each line contains a node id.
@@ -60,25 +61,6 @@ $ ./fora generate-ss-query --prefix <data-folder> --dataset <graph-name> --query
 $ ./fora generate-ss-query --prefix ./data/ --dataset webstanford --query_size 1000
 ```
 
-## Indexing
-Construct index files for the graph data using a single core. (Only for FORA)
-
-```sh
-$ ./fora build --prefix <data-folder> --dataset <graph-name> --epsilon <relative error> (--opt)
-```
-Note: the code of indexing for hubppr is not included here, please turn to the code of hubppr: https://sourceforge.net/projects/hubppr/
-
-- Example: build index for KDD version.
-
-```sh
-$ ./fora build --prefix ./data/ --dataset webstanford --epsilon 0.5
-```
-
-- Example: build index for TODS version.
-```sh
-$ ./fora build --prefix ./data/ --dataset webstanford --epsilon 0.5 --opt
-```
-
 
 ## Query
 Process queries.
@@ -90,18 +72,9 @@ $ ./fora query --algo <algo-name> --prefix <data-folder> --dataset <graph-name> 
 - Example:
 
 ```sh
-// without index KDD version
-$ ./fora query --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20
 
-// without index TODS version (balance strategy and optimization technique included)
-$ ./fora query --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --balanced --opt
+$ ./fora query --algo fwdpush --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20
 
-// with index KDD version
-$ ./fora query --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --with_idx
-
-// with index TODS version
-$ ./fora query --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --with_idx --opt
-```
 
 
 ## Top-K
@@ -114,17 +87,8 @@ $ ./fora topk --algo <algo-name> --prefix <data-folder> --dataset <graph-name> -
 - Example
 
 ```sh
-// without index
-$ ./fora topk --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --k 500
 
-// without index TODS version
-$ ./fora topk --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --k 500 --opt
-
-// with index KDD version
-$ ./fora topk --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --k 500 --with_idx
-
-// with index TODS version
-$ ./fora topk --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --k 500 --with_idx --opt
+$ ./fora topk --algo fwdpush --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --k 500
 
 
 ```
@@ -155,5 +119,5 @@ $ ./fora batch-topk --algo <algo-name> --prefix <data-folder> --dataset <graph-n
 - Example
 
 ```sh
-$ ./fora batch-topk --algo fora --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --k 500 --exact_ppr_path ./exact/
+$ ./fora batch-topk --algo fwdpush --prefix ./data/ --dataset webstanford --epsilon 0.5 --query_size 20 --k 500 --exact_ppr_path ./exact/
 ```
