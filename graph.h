@@ -9,6 +9,7 @@ public:
 
     vector<vector<int>> g;
     vector<vector<int>> gr;
+    vector<int> outdegrees;
     string data_folder;
 
     //vector<double> global_ppr;
@@ -42,6 +43,7 @@ public:
             init_graph();
         else
             init_nm();
+        init_outdegree();
         cout << "init graph n: " << this->n << " m: " << this->m << endl;
     }
 
@@ -61,6 +63,13 @@ public:
             if (c == '=') break;
         }
         attr >> m;
+    }
+    
+    void init_outdegree() {
+        outdegrees.resize(n);
+        for(int i = 0; i < g.size(); i++){
+           outdegrees[i] = g[i].size();
+        }
     }
 
     void init_nm_convert(){
@@ -152,11 +161,13 @@ public:
             FILE *fin = fopen(graph_file.c_str(), "r");
             int t1, t2;
             while (fscanf(fin, "%d%d", &t1, &t2) != EOF) {
-                assert(t1 < n+1);
-                assert(t2 < n+1);
+                assert(t1 < n);
+                assert(t2 < n);
                 if(t1 == t2) continue;
                 g[t1].push_back(t2);
+                g[t2].push_back(t1);
                 gr[t2].push_back(t1);
+                gr[t1].push_back(t2);
             }
         }
     }

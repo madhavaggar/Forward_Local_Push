@@ -20,6 +20,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem.hpp>
 #include "unordered_map.hpp"
+#include "bytell_hash_map.hpp"
 #include <sparsehash/sparse_hash_map>
 #include <sparsehash/dense_hash_map>
 #include <unordered_map>

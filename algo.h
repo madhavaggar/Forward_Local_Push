@@ -1,7 +1,7 @@
 //Contributors: Sibo Wang, Renchi Yang
 #ifndef __ALGO_H__
 #define __ALGO_H__
-//#define ska::unordered_map unordered_map
+//#define dense_hash_map unordered_map
 
 #include "graph.h"
 #include "heap.h"
@@ -26,7 +26,7 @@ struct PredResult{
         real_topk_source_count(count){}
 };
 
-unordered_map<int, PredResult> pred_results;
+dense_hash_map<int, PredResult> pred_results;
 
 // RwIdx rw_idx;
 atomic<unsigned long long> num_total_rw;
@@ -215,7 +215,7 @@ void compute_precision(int v, vector< pair<int ,double> > &topk_pprs){
     //INFO(topk_pprs.size());
     if( exact_topk_pprs.size()>=1 && exact_topk_pprs.find(v)!=exact_topk_pprs.end() ){
 
-        unordered_map<int, double> topk_map;
+        dense_hash_map<int, double> topk_map;
 
         for(auto &p: topk_pprs){
             if(p.second>0){
@@ -224,7 +224,7 @@ void compute_precision(int v, vector< pair<int ,double> > &topk_pprs){
         }
         
 
-        unordered_map<int, double> exact_map;
+        dense_hash_map<int, double> exact_map;
         int size_e = min( config.k, (unsigned int)exact_topk_pprs[v].size() );
 
         for(int i=0; i<size_e; i++){
@@ -263,7 +263,7 @@ double topk_ppr(iMap<double> &ppr, vector< pair<int ,double> > &topk_pprs){
     topk_pprs.clear();
     topk_pprs.resize(config.k);
 
-    unordered_map< int, double > temp_ppr;
+    dense_hash_map< int, double > temp_ppr;
     
     temp_ppr.clear();
     //temp_ppr.resize(ppr.occur.m_num);
@@ -286,7 +286,7 @@ void compute_precision_for_dif_k(int v, vector< pair<int ,double> > &topk_pprs){
         for(auto k: ks){
 
             int j=0;
-            unordered_map<int, double> topk_map;
+            dense_hash_map<int, double> topk_map;
             for(auto &p: topk_pprs){
                 if(p.second>0){
                     topk_map.insert(p);
@@ -298,7 +298,7 @@ void compute_precision_for_dif_k(int v, vector< pair<int ,double> > &topk_pprs){
             }
 
             double recall=0.0;
-            unordered_map<int, double> exact_map;
+            dense_hash_map<int, double> exact_map;
             int size_e = min( k, (int)exact_topk_pprs[v].size() );
             for(int i=0; i<size_e; i++){
                 pair<int ,double>& p = exact_topk_pprs[v][i];
@@ -351,8 +351,12 @@ void reverse_local_update_linear(int t, const Graph &graph, Bwdidx &bwd_idx, dou
     bwd_idx.first.clean();
     bwd_idx.second.clean();
 
-    unordered_map<int, bool> idx;
-    idx.clear();
+    //dense_hash_map<int, bool> idx;
+    
+    vector<bool> idx(graph.n);
+    std::fill(idx.begin(), idx.end(), false);
+
+    //idx.clear();
 
     vector<int> q;
     q.reserve(graph.n);
@@ -371,22 +375,23 @@ void reverse_local_update_linear(int t, const Graph &graph, Bwdidx &bwd_idx, dou
         left++;
         if (bwd_idx.second[v] < myeps)
             break;
-
+        double v_residue = bwd_idx.second[v];
         if(bwd_idx.first.notexist(v))
-            bwd_idx.first.insert(v, bwd_idx.second[v]*config.alpha);
+            bwd_idx.first.insert(v, v_residue*config.alpha);
         else
-            bwd_idx.first[v] += bwd_idx.second[v]*config.alpha;
+            bwd_idx.first[v] += v_residue*config.alpha;
 
-        double residual = (1 - config.alpha) * bwd_idx.second[v];
+        double residual = (1 - config.alpha) * v_residue;
         bwd_idx.second[v] = 0;
         if(graph.gr[v].size()>0){
             for (int next : graph.gr[v]) {
 
-                int cnt = graph.g[next].size();
+                int cnt = graph.outdegrees[v];
+                double updatevalue = residual/cnt;
                 if(bwd_idx.second.notexist(next))
-                    bwd_idx.second.insert(next, residual/cnt);
+                    bwd_idx.second.insert(next, updatevalue);
                 else
-                    bwd_idx.second[next] += residual/cnt;
+                    bwd_idx.second[next] += updatevalue;
 
                 if (bwd_idx.second[next] > myeps && idx[next] != true) {
                     // put next into q if next is not in q
@@ -441,7 +446,7 @@ void forward_local_update_linear(long long s, const Graph &graph, double& rsum, 
 
         if(out_neighbor == 0){
             fwd_idx.second[s] += v_residue * (1-config.alpha);
-            if(graph.g[s].size()>0 && fwd_idx.second[s]/graph.g[s].size() >= myeps && idx[s] != true){
+            if(graph.outdegrees[s] >0 && fwd_idx.second[s]/graph.outdegrees[s] >= myeps && idx[s] != true){
                 idx[s] = true;
                 q.push_back(s);   
             }

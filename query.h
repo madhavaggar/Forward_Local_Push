@@ -1,7 +1,7 @@
 //Contributors: Sibo Wang, Renchi Yang
 #ifndef FORA_QUERY_H
 #define FORA_QUERY_H
-//#define unordered_map ska::unordered_map
+//#define unordered_map ska::dense_hash_map
 
 #include "algo.h"
 #include "graph.h"
@@ -9,20 +9,31 @@
 #include "config.h"
 #include "build.h"
 #include <omp.h>
+#include <thread>
+#include <chrono>
 
 //#define CHECK_PPR_VALUES 1
 // #define CHECK_TOP_K_PPR 1
 #define PRINT_PRECISION_FOR_DIF_K 1
-#define NUM_THREADS 8
+#define NUM_THREADS 64
 // std::mutex mtx;
+
+
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::chrono::duration;
+using std::chrono::milliseconds;
+
 
 void compute_ppr_with_reserve(Fwdidx &fwd_idx, iMap<double> &ppr){
     ppr.clean();
     int node_id;
     double reserve;
+    //printf("number of nodes that are touched is %d\n", fwd_idx.first.occur.m_num);
     for(long i=0; i< fwd_idx.first.occur.m_num; i++){
         node_id = fwd_idx.first.occur[i];
         reserve = fwd_idx.first[ node_id ];
+        //printf("%d, %f\n", node_id, reserve);
         if(reserve)
             ppr.insert(node_id, reserve);
     }
@@ -32,16 +43,18 @@ void compute_ppr_with_reserve_reverse(Bwdidx &bwd_idx, iMap<double> &ppr){
     ppr.clean();
     int node_id;
     double reserve;
+    //printf("number of nodes that are touched is %d\n", bwd_idx.first.occur.m_num);
     for(long i=0; i< bwd_idx.first.occur.m_num; i++){
         node_id = bwd_idx.first.occur[i];
         reserve = bwd_idx.first[ node_id ];
+        //printf("%d, %f\n", node_id, reserve);
         if(reserve)
             ppr.insert(node_id, reserve);
     }
 }
 
 void get_topk_fwdpush(int v, Graph &graph, Fwdidx &fwd_idx, iMap<double> &ppr){ // 1 thread 1 query
-    display_setting();
+    //display_setting();
 
     Timer timer(0);
     double rsum = 1;
@@ -49,7 +62,9 @@ void get_topk_fwdpush(int v, Graph &graph, Fwdidx &fwd_idx, iMap<double> &ppr){ 
     {
         Timer timer(FWD_LU);
         forward_local_update_linear(v, graph, rsum, config.rmax, fwd_idx);
+        //printf("config.rmax is  %.9f\n",  config.rmax);
     }
+    
     compute_ppr_with_reserve(fwd_idx, ppr);
     vector< pair<int ,double> > topk_pprs;
     topk_ppr(ppr, topk_pprs);
@@ -72,7 +87,7 @@ void get_topk_fwdpush(int v, Graph &graph, Fwdidx &fwd_idx, iMap<double> &ppr){ 
 }
 
 void get_topk_revpush(int v, Graph &graph, Bwdidx &bwd_idx, iMap<double> &ppr){ // 1 thread 1 query
-    display_setting();
+    //display_setting();
 
     Timer timer(0);
     double rsum = 1;
@@ -102,8 +117,8 @@ void get_topk_revpush(int v, Graph &graph, Bwdidx &bwd_idx, iMap<double> &ppr){ 
 }
 
 
-void fwd_power_iteration(const Graph& graph, int start, unordered_map<int, double>& map_ppr){
-    static thread_local unordered_map<int, double> map_residual;
+void fwd_power_iteration(const Graph& graph, int start, dense_hash_map<int, double>& map_ppr){
+    static thread_local dense_hash_map<int, double> map_residual;
     map_residual[start] = 1.0;
 
     int num_iter=0;
@@ -136,8 +151,8 @@ void fwd_power_iteration(const Graph& graph, int start, unordered_map<int, doubl
     map_residual.clear();
 }
 
-void multi_power_iter(const Graph& graph, const vector<int>& source, unordered_map<int, vector<pair<int ,double>>>& map_topk_ppr ){
-    static thread_local unordered_map<int, double> map_ppr;
+void multi_power_iter(const Graph& graph, const vector<int>& source, dense_hash_map<int, vector<pair<int ,double>>>& map_topk_ppr ){
+    static thread_local dense_hash_map<int, double> map_ppr;
     for(int start: source){
         fwd_power_iteration(graph, start, map_ppr);
 
@@ -176,7 +191,7 @@ void gen_exact_topk(const Graph& graph){
     int avg_queries_per_thread = query_size/num_thread;
 
     vector<vector<int>> source_for_all_core(num_thread);
-    vector<unordered_map<int, vector<pair<int ,double>>>> ppv_for_all_core(num_thread);
+    vector<dense_hash_map<int, vector<pair<int ,double>>>> ppv_for_all_core(num_thread);
 
     for(int tid=0; tid<num_thread; tid++){
         int s = tid*avg_queries_per_thread;
@@ -227,6 +242,9 @@ void topk(Graph& graph){
     assert(config.k < graph.n-1);
     assert(config.k > 1);
     INFO(config.k);
+    
+    
+    printf("The alpha config.alpha is %.9f\n", config.alpha);
 
     split_line();
 
@@ -252,43 +270,69 @@ void topk(Graph& graph){
   
     load_exact_topk_ppr();
     omp_set_num_threads(NUM_THREADS);
-    double t1 = omp_get_wtime();
+    //double t1 = omp_get_wtime();
+    
+    auto t1 = high_resolution_clock::now();
+    
     if(config.algo == FWDPUSH){
+        
         #pragma omp parallel for
         for(int i=0; i<query_size; i++){ //1000 source nodes
+            
             used_counter=0;
-            iMap<double> ppr;
+            iMap<double> * ppr = new iMap<double>;
             fwdpush_setting(graph.n, graph.m);
-            ppr.initialize(graph.n);
-            Fwdidx fwd_idx;
-            fwd_idx.first.initialize(graph.n);
-            fwd_idx.second.initialize(graph.n);
-            cout << i + 1 << ". source node:" << queries[i] << endl;
-            get_topk_fwdpush(queries[i], graph, fwd_idx, ppr);
-            split_line();
+            (*ppr).initialize(graph.n);
+            Fwdidx * fwd_idx = new Fwdidx;
+            (*fwd_idx).first.initialize(graph.n);
+            (*fwd_idx).second.initialize(graph.n);
+            //cout << i + 1 << ". source node:" << queries[i] << endl;
+            get_topk_fwdpush(queries[i], graph, * fwd_idx, * ppr);
+            
+            (*fwd_idx).first.free_mem();
+            (*fwd_idx).second.free_mem();
+            ppr->free_mem();
+            
+            delete ppr;
+            delete fwd_idx;
+            
+            
+            //split_line();
         }
+        
     }
     else if(config.algo == REVPUSH){
         #pragma omp parallel for
         for (int i = 0; i < query_size; i++){ //1000 source nodes
             used_counter=0;
-            Bwdidx bwd_idx;
-            iMap<double> ppr;
+            Bwdidx * bwd_idx = new Bwdidx;
+            iMap<double> * ppr = new iMap<double>;
             fwdpush_setting(graph.n, graph.m);
-            ppr.initialize(graph.n);
-            bwd_idx.first.initialize(graph.n);
-            bwd_idx.second.initialize(graph.n);
-            cout << i + 1 << ". source node:" << queries[i] << endl;
-            get_topk_revpush(queries[i], graph, bwd_idx, ppr);
-            split_line();
+            (*ppr).initialize(graph.n);
+            (*bwd_idx).first.initialize(graph.n);
+            (*bwd_idx).second.initialize(graph.n);
+            //cout << i + 1 << ". source node:" << queries[i] << endl;
+            get_topk_revpush(queries[i], graph, * bwd_idx, * ppr);
+            
+            (*bwd_idx).first.free_mem();
+            (*bwd_idx).second.free_mem();
+            ppr->free_mem();
+            //split_line();
+            delete ppr;
+            delete bwd_idx;
         }
     }
 
 
-    double t2 = omp_get_wtime();
-    cout << "TIME FOR PPR: " << t2 - t1 << endl;
-    cout<<"Query Time:"<<query_size<<endl;
-    cout << "average iter times:" << num_iter_topk/query_size << endl;
+    //double t2 = omp_get_wtime();
+    auto t2 = high_resolution_clock::now();
+    duration<double, std::milli> ms_double = t2 - t1;
+    
+    std::cout << "TIME FOR PPR: " << ms_double.count() << "ms\n";
+    
+    //cout << "TIME FOR PPR: " << t2 - t1 << endl;
+    //cout<<"Query Time:"<<query_size<<endl;
+    cout << "average iter times:" << ms_double.count()/query_size << "ms\n";
     display_time_usage(used_counter, query_size);
     set_result(graph, used_counter, query_size);
 
@@ -298,6 +342,34 @@ void topk(Graph& graph){
     display_precision_for_dif_k();
 
 }
+
+
+
+
+void querythread(int start_add, int end_add, vector<long long> & queries, Graph& graph, Fwdidx & fwd_idx, double rsum, iMap<double> & ppr){
+
+
+    fwd_idx.first.clean();
+    fwd_idx.second.clean();
+    ppr.clean();
+
+    //std::cout << "start and end is " <<  start_add << " "<< end_add << endl;
+    //std::thread::id this_id = std::this_thread::get_id();
+    //std::cout << "thread " << this_id << endl;
+
+    for(int iq = start_add; iq < end_add; iq++){
+        forward_local_update_linear(queries[iq], graph, rsum, config.rmax, fwd_idx);
+        //     //cout<<"After forward_local_update"<<endl;
+        compute_ppr_with_reserve(fwd_idx, ppr);
+        fwd_idx.first.clean();
+        fwd_idx.second.clean();
+        ppr.clean();
+    }
+
+
+}
+
+
 
 void query(Graph& graph){
     INFO(config.algo);
@@ -312,31 +384,96 @@ void query(Graph& graph){
     INFO(config.rmax_scale);
 
     omp_set_num_threads(NUM_THREADS);  
+
+
+    std::vector<std::thread> threads;
+
+
+    int numberOfqueryPerThread = query_size/NUM_THREADS;
        
-    double t1 = omp_get_wtime();
+    auto t1 = high_resolution_clock::now();
     if(config.algo == FWDPUSH){
-         
-        #pragma omp parallel for
-        for(long long i=0; i<query_size; i++){ //parallelize pardo using multiple threads: multiple sources at once
-            used_counter=0;
-            iMap<double> ppr;
-            ppr.init_keys(graph.n);
-            fwdpush_setting(graph.n, graph.m);
-            display_setting();
-            used_counter = FWD_LU;
-            Fwdidx fwd_idx;
-            fwd_idx.first.initialize(graph.n);
-            fwd_idx.second.initialize(graph.n);
-            cout << i+1 <<". source node:" << queries[i] << endl;
-            Timer timer(used_counter);
-            double rsum = 1;
-            //cout<<"Before forward_local_update"<<endl;
-            forward_local_update_linear(queries[i], graph, rsum, config.rmax, fwd_idx);
-            //cout<<"After forward_local_update"<<endl;
-            compute_ppr_with_reserve(fwd_idx, ppr);
-            //cout<<"Afterreserve computation"<<endl;
-            split_line();
+        used_counter=0;
+        fwdpush_setting(graph.n, graph.m);
+        double rsum = 1;
+        used_counter = FWD_LU;
+        Timer timer(used_counter);
+        iMap<double> ppr[NUM_THREADS];
+        Fwdidx fwd_idx[NUM_THREADS];
+        for(int it = 0; it < NUM_THREADS; it++){
+            ppr[it].init_keys(graph.n);
+            fwd_idx[it].first.initialize(graph.n);
+            fwd_idx[it].second.initialize(graph.n);
         }
+
+        for(int it = 0; it < NUM_THREADS; it++){
+            printf("allocate thread\n");
+            if(it < NUM_THREADS  - 1){
+                threads.push_back(std::thread(
+                    querythread,
+                    it * numberOfqueryPerThread,
+                    (it + 1) * numberOfqueryPerThread,
+                    std::ref(queries),
+                    std::ref(graph),
+                    std::ref(fwd_idx[it]),
+                    rsum,
+                    std::ref(ppr[it])
+                    ));
+            }
+            else{
+                threads.push_back(std::thread(
+                    querythread, 
+                    it * numberOfqueryPerThread,
+                    query_size,
+                    std::ref(queries),
+                    std::ref(graph),
+                    std::ref(fwd_idx[it]),
+                    rsum,
+                    std::ref(ppr[it])
+                    ));
+            }
+        }
+
+        
+
+
+        for(int it = 0; it < NUM_THREADS; it++){
+            threads[it].join();
+            ppr[it].free_mem();
+            fwd_idx[it].first.free_mem();
+            fwd_idx[it].second.free_mem();
+        }
+        
+
+
+
+
+
+        // #pragma omp parallel for
+        // for(long long i=0; i<query_size; i++){ //parallelize pardo using multiple threads: multiple sources at once
+        //     used_counter=0;
+        //     iMap<double> ppr;
+        //     ppr.init_keys(graph.n);
+        //     fwdpush_setting(graph.n, graph.m);
+        //     //display_setting();
+        //     used_counter = FWD_LU;
+        //     Fwdidx fwd_idx;
+        //     fwd_idx.first.initialize(graph.n);
+        //     fwd_idx.second.initialize(graph.n);
+        //     //cout << i+1 <<". source node:" << queries[i] << endl;
+        //     Timer timer(used_counter);
+        //     double rsum = 1;
+        //     //cout<<"Before forward_local_update"<<endl;
+        //     forward_local_update_linear(queries[i], graph, rsum, config.rmax, fwd_idx);
+        //     //cout<<"After forward_local_update"<<endl;
+        //     compute_ppr_with_reserve(fwd_idx, ppr);
+        //     fwd_idx.first.free_mem();
+        //     fwd_idx.second.free_mem();
+        //     ppr.free_mem();
+            
+        //     //cout<<"Afterreserve computation"<<endl;
+        //     //split_line();
+        // }
     }
     else if(config.algo == REVPUSH){
         
@@ -346,23 +483,33 @@ void query(Graph& graph){
             iMap<double> ppr;
             ppr.init_keys(graph.n);
             fwdpush_setting(graph.n, graph.m);
-            display_setting();
+            //display_setting();
             used_counter = FWD_LU;
             Bwdidx bwd_idx; 
             bwd_idx.first.initialize(graph.n);
             bwd_idx.second.initialize(graph.n);
             
-            cout << i+1 <<". source node:" << queries[i] << endl;
+            //cout << i+1 <<". source node:" << queries[i] << endl;
             Timer timer(used_counter);
             double rsum = 1;
             reverse_local_update_linear(queries[i], graph, bwd_idx);
             compute_ppr_with_reserve_reverse(bwd_idx, ppr);
-            split_line();
+            //split_line();
+            bwd_idx.first.free_mem();
+            bwd_idx.second.free_mem();
+            ppr.free_mem();
         }
 
     }
-    double t2 = omp_get_wtime();
-    cout << "TIME FOR PPR: " << t2 - t1 << endl;
+     auto t2 = high_resolution_clock::now();
+    duration<double, std::milli> ms_double = t2 - t1;
+    
+    std::cout << "TIME FOR PPR: " << ms_double.count() << "ms\n";
+    
+    //cout << "TIME FOR PPR: " << t2 - t1 << endl;
+    //cout<<"Query Time:"<<query_size<<endl;
+    cout << "average iter times:" << ms_double.count()/query_size << "ms\n";
+    
     display_time_usage(used_counter, query_size);
     set_result(graph, used_counter, query_size);
 }
@@ -414,10 +561,10 @@ void batch_topk(Graph& graph){
             fwd_idx.first.initialize(graph.n);
             fwd_idx.second.initialize(graph.n);
 
-            cout << i + 1 << ". source node:" << queries[i] << endl;
+            //cout << i + 1 << ". source node:" << queries[i] << endl;
             get_topk_fwdpush(queries[i], graph, fwd_idx, ppr);
 
-            split_line();
+            //split_line();
         }
     }
 
@@ -434,10 +581,12 @@ void batch_topk(Graph& graph){
             bwd_idx.first.initialize(graph.n);
             bwd_idx.second.initialize(graph.n);
 
-            cout << i + 1 << ". source node:" << queries[i] << endl;
+            //cout << i + 1 << ". source node:" << queries[i] << endl;
             get_topk_revpush(queries[i], graph, bwd_idx, ppr);
 
-            split_line();
+
+
+            //split_line();
         }
     }
 
