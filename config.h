@@ -91,7 +91,7 @@ public:
         return prefix + graph_alias + FILESEP;
     }
     bool opt = false;
-    bool remap = false;
+    bool remap = true;
     bool force_rebuild = false;
     // int num_rw = 10;
 

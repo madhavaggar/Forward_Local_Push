@@ -1,7 +1,7 @@
 //Contributors: Sibo Wang, Renchi Yang
 #ifndef __ALGO_H__
 #define __ALGO_H__
-//#define dense_hash_map unordered_map
+//#define ska::bytell_hash_map ska::bytell_hash_map
 
 #include "graph.h"
 #include "heap.h"
@@ -26,7 +26,7 @@ struct PredResult{
         real_topk_source_count(count){}
 };
 
-dense_hash_map<int, PredResult> pred_results;
+ska::bytell_hash_map<int, PredResult> pred_results;
 
 // RwIdx rw_idx;
 atomic<unsigned long long> num_total_rw;
@@ -215,7 +215,7 @@ void compute_precision(int v, vector< pair<int ,double> > &topk_pprs){
     //INFO(topk_pprs.size());
     if( exact_topk_pprs.size()>=1 && exact_topk_pprs.find(v)!=exact_topk_pprs.end() ){
 
-        dense_hash_map<int, double> topk_map;
+        ska::bytell_hash_map<int, double> topk_map;
 
         for(auto &p: topk_pprs){
             if(p.second>0){
@@ -224,7 +224,7 @@ void compute_precision(int v, vector< pair<int ,double> > &topk_pprs){
         }
         
 
-        dense_hash_map<int, double> exact_map;
+        ska::bytell_hash_map<int, double> exact_map;
         int size_e = min( config.k, (unsigned int)exact_topk_pprs[v].size() );
 
         for(int i=0; i<size_e; i++){
@@ -263,7 +263,7 @@ double topk_ppr(iMap<double> &ppr, vector< pair<int ,double> > &topk_pprs){
     topk_pprs.clear();
     topk_pprs.resize(config.k);
 
-    dense_hash_map< int, double > temp_ppr;
+    ska::bytell_hash_map< int, double > temp_ppr;
     
     temp_ppr.clear();
     //temp_ppr.resize(ppr.occur.m_num);
@@ -286,7 +286,7 @@ void compute_precision_for_dif_k(int v, vector< pair<int ,double> > &topk_pprs){
         for(auto k: ks){
 
             int j=0;
-            dense_hash_map<int, double> topk_map;
+            ska::bytell_hash_map<int, double> topk_map;
             for(auto &p: topk_pprs){
                 if(p.second>0){
                     topk_map.insert(p);
@@ -298,7 +298,7 @@ void compute_precision_for_dif_k(int v, vector< pair<int ,double> > &topk_pprs){
             }
 
             double recall=0.0;
-            dense_hash_map<int, double> exact_map;
+            ska::bytell_hash_map<int, double> exact_map;
             int size_e = min( k, (int)exact_topk_pprs[v].size() );
             for(int i=0; i<size_e; i++){
                 pair<int ,double>& p = exact_topk_pprs[v][i];
@@ -351,7 +351,7 @@ void reverse_local_update_linear(int t, const Graph &graph, Bwdidx &bwd_idx, dou
     bwd_idx.first.clean();
     bwd_idx.second.clean();
 
-    //dense_hash_map<int, bool> idx;
+    //ska::bytell_hash_map<int, bool> idx;
     
     vector<bool> idx(graph.n);
     std::fill(idx.begin(), idx.end(), false);

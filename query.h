@@ -1,7 +1,7 @@
 //Contributors: Sibo Wang, Renchi Yang
 #ifndef FORA_QUERY_H
 #define FORA_QUERY_H
-//#define unordered_map ska::dense_hash_map
+//#define ska::bytell_hash_map ska::ska::bytell_hash_map
 
 #include "algo.h"
 #include "graph.h"
@@ -117,8 +117,8 @@ void get_topk_revpush(int v, Graph &graph, Bwdidx &bwd_idx, iMap<double> &ppr){ 
 }
 
 
-void fwd_power_iteration(const Graph& graph, int start, dense_hash_map<int, double>& map_ppr){
-    static thread_local dense_hash_map<int, double> map_residual;
+void fwd_power_iteration(const Graph& graph, int start, ska::bytell_hash_map<int, double>& map_ppr){
+    static thread_local ska::bytell_hash_map<int, double> map_residual;
     map_residual[start] = 1.0;
 
     int num_iter=0;
@@ -151,8 +151,8 @@ void fwd_power_iteration(const Graph& graph, int start, dense_hash_map<int, doub
     map_residual.clear();
 }
 
-void multi_power_iter(const Graph& graph, const vector<int>& source, dense_hash_map<int, vector<pair<int ,double>>>& map_topk_ppr ){
-    static thread_local dense_hash_map<int, double> map_ppr;
+void multi_power_iter(const Graph& graph, const vector<int>& source, ska::bytell_hash_map<int, vector<pair<int ,double>>>& map_topk_ppr ){
+    static thread_local ska::bytell_hash_map<int, double> map_ppr;
     for(int start: source){
         fwd_power_iteration(graph, start, map_ppr);
 
@@ -191,7 +191,7 @@ void gen_exact_topk(const Graph& graph){
     int avg_queries_per_thread = query_size/num_thread;
 
     vector<vector<int>> source_for_all_core(num_thread);
-    vector<dense_hash_map<int, vector<pair<int ,double>>>> ppv_for_all_core(num_thread);
+    vector<ska::bytell_hash_map<int, vector<pair<int ,double>>>> ppv_for_all_core(num_thread);
 
     for(int tid=0; tid<num_thread; tid++){
         int s = tid*avg_queries_per_thread;
