@@ -15,7 +15,7 @@ $ make
 ```
 
 ## Parameters
-```sh
+```sh `
 ./fora action_name --algo <algorithm> [options]
 ```
 - action:
@@ -36,7 +36,7 @@ $ make
     - --result_dir \<directory to place results\>
 
 ## Data
-The example data format is in `./data/webstanford/` folder. The data for DBLP, Pokec, Livejournal, Twitter, Friendster are not included here for size limitation reason. You can find them online. For datasets with **node numbers greater than the node count** kindly reassign `remap` variable in config.h to True and define maxid in attribute.txt and then recompile. Set the parameter after `--dataset` in order to change the dataset. You can download the datasets at https://snap.stanford.edu/data/. Define your attribute.txt under `./data/<dataset> along with graph.txt as given below.
+The example data format is in `./data/webstanford/` folder. The data for DBLP, Pokec, Livejournal, Twitter, Friendster are not included here for size limitation reason. You can find them online. For datasets with **node numbers greater than the node count** kindly reassign `remap` variable in config.h to True and define maxid in attribute.txt and then recompile. Set the parameter after `--dataset` in order to change the dataset. You can download the datasets at https://snap.stanford.edu/data/. Define your attribute.txt under `./data/<dataset>` along with graph.txt as given below.
 
 ```
 m = (number of nodes), 
