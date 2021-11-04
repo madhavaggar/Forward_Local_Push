@@ -15,9 +15,10 @@ $ make
 ```
 
 ## Parameters
-```sh `
+```sh
 ./fora action_name --algo <algorithm> [options]
 ```
+
 - action:
     - query
     - topk
