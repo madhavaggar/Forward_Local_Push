@@ -29,18 +29,31 @@ $ make
 - options
     - --prefix \<prefix\>
     - --epsilon \<epsilon\>
-    - --dataset \<dataset\>
+    - --dataset \<dataset\> [Can use any dataset]
     - --query_size \<queries count\>
     - --k \<top k\>
     - --exact_ppr_path \<directory to place generated ground truth\>
     - --result_dir \<directory to place results\>
 
 ## Data
-The example data format is in `./data/webstanford/` folder. The data for DBLP, Pokec, Livejournal, Twitter, Friendster are not included here for size limitation reason. You can find them online. For datasets with **node numbers greater than the node count** kindly reassign `remap` variable in config.h to True and then recompile.
+The example data format is in `./data/webstanford/` folder. The data for DBLP, Pokec, Livejournal, Twitter, Friendster are not included here for size limitation reason. You can find them online. For datasets with **node numbers greater than the node count** kindly reassign `remap` variable in config.h to True and define maxid in attribute.txt and then recompile. Set the parameter after `--dataset` in order to change the dataset. You can download the datasets at https://snap.stanford.edu/data/. Define your attribute.txt under `./data/<dataset> along with graph.txt as given below.
 
-config.remap = True;
+```
+m = (number of nodes), 
+n = (number of edges), 
+maxid = (maximum possible node ID)
+
+```
 
 ```sh
+make
+
+```
+
+## Changing the Number of Threads
+In order to change the number of threads you can set the `NUM_THREADS` macro under query.h to a number of your choice. Post the change please run:
+
+```shID
 make
 
 ```
